@@ -1,0 +1,61 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: prometheus-config
+  namespace: monitoring
+data:
+  prometheus.yml: |
+    global:
+      scrape_interval: 15s
+
+    scrape_configs:
+      - job_name: 'prometheus'
+        static_configs:
+          - targets: ['localhost:9090']
+
+      - job_name: 'flask-app'
+        metrics_path: /metrics
+        static_configs:
+          - targets: ['34.42.228.136:5000']
+
+
+
+# -----------------------------------------------------------------------------
+# Prometheus Configuration ConfigMap
+#
+# This ConfigMap stores the configuration file used by Prometheus to determine
+# how and where it should collect (scrape) metrics.
+#
+# Resource details:
+# - Kind: ConfigMap
+# - Name: prometheus-config
+# - Namespace: monitoring
+#
+# The ConfigMap contains a Prometheus configuration file (prometheus.yml).
+# When mounted into a Prometheus container, it tells Prometheus what targets
+# to scrape and how often to collect metrics.
+#
+# Configuration breakdown:
+#
+# 1. Global Settings
+#    global:
+#      scrape_interval: 15s
+#    - Prometheus will collect metrics from all configured targets every
+#      15 seconds.
+#
+# 2. Scrape Job: Prometheus Itself
+#    job_name: 'prometheus'
+#    - Prometheus monitors its own metrics.
+#    - Target: localhost:9090 (the default Prometheus server port).
+#
+# 3. Scrape Job: Flask Application
+#    job_name: 'flask-app'
+#    - Prometheus collects metrics from the Flask application.
+#    - metrics_path: /metrics tells Prometheus where the metrics endpoint is.
+#    - Target: 34.42.228.136:5000 which is the Flask application's address
+#      and port.
+#
+# Overall flow:
+# Prometheus server → requests /metrics endpoint → Flask app → collects metrics
+# every 15 seconds and stores them for monitoring and visualization.
+# -----------------------------------------------------------------------------

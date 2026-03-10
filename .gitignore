@@ -1,0 +1,4 @@
+.env
+venv/
+.venv/
+e_commerce_reccomender_sys.egg-info

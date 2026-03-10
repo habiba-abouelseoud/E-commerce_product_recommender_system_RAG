@@ -1,0 +1,66 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: flask-app
+  labels:
+    app: flask
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: flask
+  template:
+    metadata:
+      labels:
+        app: flask
+    spec:
+      containers:
+      - name: flask-container
+        image: flask-app:latest
+        imagePullPolicy: IfNotPresent
+        ports:
+          - containerPort: 5000
+        envFrom:
+          - secretRef:
+              name: llmops-secrets
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: flask-service
+spec:
+  type: LoadBalancer
+  selector:
+    app: flask
+  ports:
+    - protocol: TCP
+      port: 80
+      targetPort: 5000
+
+
+
+
+# This Kubernetes manifest creates two resources: a Deployment and a Service
+# to run and expose a Flask web application.
+
+# 1. Deployment (flask-app)
+#    - Creates and manages a Pod running a Flask application container.
+#    - Uses the Docker image "flask-app:latest".
+#    - Runs 1 replica (one instance of the application).
+#    - The container exposes port 5000, which is the default Flask app port.
+#    - Environment variables are loaded from a Kubernetes Secret named
+#      "llmops-secrets".
+#    - The Pod is labeled "app: flask", which allows other Kubernetes
+#      resources (like Services) to find it.
+
+# 2. Service (flask-service)
+#    - Exposes the Flask application to external traffic.
+#    - Uses type "LoadBalancer", which creates an external IP or cloud
+#      load balancer (depending on the Kubernetes environment).
+#    - Listens on port 80 and forwards incoming requests to port 5000
+#      on the Flask container.
+#    - Uses the label selector "app: flask" to route traffic to the
+#      Pods created by the Deployment.
+
+# Overall flow:
+# External user → Service (port 80) → Flask Pod (port 5000) → Flask application

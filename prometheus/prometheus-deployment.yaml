@@ -1,0 +1,93 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: prometheus
+  namespace: monitoring
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: prometheus
+  template:
+    metadata:
+      labels:
+        app: prometheus
+    spec:
+      containers:
+        - name: prometheus
+          image: prom/prometheus
+          args:
+            - "--config.file=/etc/prometheus/prometheus.yml"
+          ports:
+            - containerPort: 9090
+          volumeMounts:
+            - name: config-volume
+              mountPath: /etc/prometheus
+      volumes:
+        - name: config-volume
+          configMap:
+            name: prometheus-config
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: prometheus-service
+  namespace: monitoring
+spec:
+  selector:
+    app: prometheus
+  ports:
+    - protocol: TCP
+      port: 9090
+      targetPort: 9090
+      nodePort: 32001 
+  type: NodePort
+
+
+# -----------------------------------------------------------------------------
+# Prometheus Deployment and Service
+#
+# This manifest deploys a Prometheus monitoring server inside the "monitoring"
+# namespace and exposes it so it can be accessed from outside the cluster.
+#
+# 1. Deployment: prometheus
+#    - Creates and manages a Pod running the Prometheus server.
+#    - Runs 1 replica of the Prometheus container using the image
+#      "prom/prometheus".
+#    - The container exposes port 9090, which is the default Prometheus UI
+#      and API port.
+#
+#    Configuration:
+#    - Prometheus is started with the argument:
+#        --config.file=/etc/prometheus/prometheus.yml
+#      which tells Prometheus where its configuration file is located.
+#
+#    ConfigMap Integration:
+#    - A volume named "config-volume" is created from the ConfigMap
+#      "prometheus-config".
+#    - This volume is mounted inside the container at /etc/prometheus.
+#    - This allows Prometheus to read its configuration (prometheus.yml)
+#      from the ConfigMap.
+#
+#    Labeling:
+#    - The Pod is labeled "app: prometheus".
+#    - The Deployment selector ensures it manages Pods with this label.
+#
+# 2. Service: prometheus-service
+#    - Exposes the Prometheus Pod so it can be accessed externally.
+#    - Uses the selector "app: prometheus" to route traffic to the
+#      Prometheus Pod.
+#
+#    Ports:
+#    - Port 9090: the service port used inside the cluster.
+#    - targetPort 9090: forwards traffic to the Prometheus container.
+#
+#    NodePort Access:
+#    - Type: NodePort
+#    - nodePort: 32001
+#    - This exposes Prometheus on each Kubernetes node at:
+#        http://<Node-IP>:32001
+#
+# Overall Flow:
+# User → NodeIP:32001 → Service (port 9090) → Prometheus Pod → Prometheus UI
+# -----------------------------------------------------------------------------
